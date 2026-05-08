@@ -1,0 +1,14 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Hệ thống quản lý nhân sự siêu thị mini — Backend API",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "setup-db": "node scripts/setup.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
