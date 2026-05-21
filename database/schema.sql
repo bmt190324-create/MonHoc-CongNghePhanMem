@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS NhanVien (
   so_tai_khoan TEXT,                  -- mã hóa at-rest bằng pgcrypto
   vai_tro_id INT REFERENCES VaiTro(id),
   trang_thai BOOLEAN DEFAULT TRUE,    -- soft delete
+  ngay_vo_hieu_hoa TIMESTAMPTZ,       -- track when account was disabled
   ngay_tao TIMESTAMPTZ DEFAULT NOW()
 );
 

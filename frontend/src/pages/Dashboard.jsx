@@ -90,7 +90,7 @@ const Dashboard = () => {
             <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
                 <div className="max-w-2xl">
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                        Chào buổi tối, {user?.hoTen}
+                        Xin chào, {user?.hoTen}
                     </h1>
                     <p className="text-gray-500 text-base font-medium">
                         Hệ thống Quản lý Nhân sự MiniMart. Chúc bạn một ngày làm việc hiệu quả.

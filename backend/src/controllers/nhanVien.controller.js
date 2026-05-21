@@ -110,7 +110,7 @@ const remove = async (req, res) => {
 
     // 1. Vô hiệu hóa nhân viên
     const { rowCount } = await client.query(
-      `UPDATE NhanVien SET trang_thai = FALSE WHERE id = $1`, [id]
+      `UPDATE NhanVien SET trang_thai = FALSE, ngay_vo_hieu_hoa = NOW() WHERE id = $1`, [id]
     );
 
     if (!rowCount) {
@@ -232,7 +232,7 @@ const restore = async (req, res) => {
     await client.query('BEGIN');
     
     // 1. Phục hồi trạng thái nhân viên
-    await client.query(`UPDATE NhanVien SET trang_thai = TRUE WHERE id = $1`, [id]);
+    await client.query(`UPDATE NhanVien SET trang_thai = TRUE, ngay_vo_hieu_hoa = NULL WHERE id = $1`, [id]);
 
     // 2. Mở khóa tài khoản
     await client.query(`UPDATE TaiKhoan SET bi_khoa = FALSE WHERE nhan_vien_id = $1`, [id]);
@@ -279,9 +279,9 @@ const updateProfile = async (req, res) => {
     const { rows } = await pool.query(
       `UPDATE NhanVien SET 
               ho_ten = COALESCE($1, ho_ten),
-              cccd = CASE WHEN $2::text IS NOT NULL THEN pgp_sym_encrypt($2::text, $5) ELSE cccd END,
+              cccd = CASE WHEN $2::text IS NOT NULL THEN pgp_sym_encrypt($2::text, $5)::text ELSE cccd END,
               the_sinh_vien = COALESCE($3, the_sinh_vien),
-              so_tai_khoan = CASE WHEN $4::text IS NOT NULL THEN pgp_sym_encrypt($4::text, $5) ELSE so_tai_khoan END
+              so_tai_khoan = CASE WHEN $4::text IS NOT NULL THEN pgp_sym_encrypt($4::text, $5)::text ELSE so_tai_khoan END
        WHERE id = $6 RETURNING id, ho_ten`,
       [ho_ten || null, cccd || null, the_sinh_vien || null, so_tai_khoan || null, encKey, id]
     );

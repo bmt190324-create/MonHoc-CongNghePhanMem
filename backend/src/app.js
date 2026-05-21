@@ -74,6 +74,10 @@ app.listen(PORT, async () => {
   
   // Kiểm tra và tạo lại mỗi 24 giờ để luôn có tuần mới
   setInterval(ensureWeeks, 24 * 60 * 60 * 1000);
+
+  // Khởi động cron job dọn dẹp tài khoản
+  const { cleanupDisabledAccounts } = require('./jobs/cleanup');
+  await cleanupDisabledAccounts();
 });
 
 module.exports = app;
