@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS VaiTro (
   id SERIAL PRIMARY KEY,
-  ten_vai_tro VARCHAR(10) NOT NULL CHECK (ten_vai_tro IN ('CST', 'QLC', 'NV')),
+  ten_vai_tro VARCHAR(10) NOT NULL UNIQUE CHECK (ten_vai_tro IN ('CST', 'QLC', 'NV')),
   mo_ta TEXT
 );
 
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS TaiKhoan (
 CREATE TABLE IF NOT EXISTS CauHinhLuong (
   id SERIAL PRIMARY KEY,
   don_gia_gio NUMERIC(12,2) NOT NULL,
-  ngay_ap_dung DATE NOT NULL,
+  ngay_ap_dung DATE NOT NULL UNIQUE,
   ghi_chu TEXT,
   nguoi_tao INT REFERENCES NhanVien(id)
 );
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS TuanLamViec (
 -- ============================================================
 CREATE TABLE IF NOT EXISTS KhungCa (
   id SERIAL PRIMARY KEY,
-  ten_ca VARCHAR(20) NOT NULL,
+  ten_ca VARCHAR(20) NOT NULL UNIQUE,
   gio_bat_dau TIME NOT NULL,
   gio_ket_thuc TIME NOT NULL,
   min_nv INT DEFAULT 2,
@@ -335,7 +335,7 @@ $$;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS ThongBao (
   id SERIAL PRIMARY KEY,
-  tieu_de VARCHAR(255) NOT NULL,
+  tieu_de VARCHAR(255) NOT NULL UNIQUE,
   noi_dung TEXT NOT NULL,
   muc_do VARCHAR(20) DEFAULT 'info',
   is_pinned BOOLEAN DEFAULT FALSE,
