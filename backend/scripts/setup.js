@@ -93,6 +93,8 @@ async function setup() {
 }
 
 setup().catch(err => {
-  console.error('❌ Lỗi setup:', err.message);
+  console.error('❌ Lỗi setup full:', err);
+  console.error('❌ Error code:', err.code);
+  console.error('❌ Error message:', err.message);
   process.exit(1);
 });
