@@ -5,18 +5,13 @@ const { handlePgError } = require('../middleware/errorHandler');
 const theoCa = async (req, res) => {
   const { lich_id } = req.params;
   try {
-    const { rows } = await pool.query(
-      `SELECT cc.*, pc.nhan_vien_id, nv.ho_ten,
-              l.ngay_lam, kc.ten_ca, kc.gio_bat_dau, kc.gio_ket_thuc
-       FROM ChamCong cc
-       JOIN PhanCongCa pc ON pc.id = cc.phan_cong_id
-       JOIN NhanVien nv ON nv.id = pc.nhan_vien_id
-       JOIN LichLamViec l ON l.id = pc.lich_id
-       JOIN KhungCa kc ON kc.id = l.khung_ca_id
-       WHERE pc.lich_id = $1
-       ORDER BY nv.ho_ten`,
-      [lich_id]
-    );
+    const { rows: dkRows } = await client.query(
+  `SELECT dk.*, t.ngay_bat_dau, t.deadline_dk
+   FROM DangKyCa dk
+   JOIN TuanLamViec t ON t.id = dk.tuan_id
+   WHERE dk.id = $1`,
+  [id]
+);
     return res.json(rows);
   } catch (err) { return handlePgError(err, res); }
 };
