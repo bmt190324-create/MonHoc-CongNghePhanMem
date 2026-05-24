@@ -9,6 +9,12 @@ import toast from 'react-hot-toast';
 import { PlusIcon, PencilSquareIcon, TrashIcon, KeyIcon, ArrowPathIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import Modal from '../../components/common/Modal';
+import PageHeader from '../../components/common/PageHeader';
+import SkeletonTable from '../../components/common/SkeletonTable';
+import EmptyState from '../../components/common/EmptyState';
+import { UserGroupIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import SearchInput from '../../components/common/SearchInput';
+import FilterSelect from '../../components/common/FilterSelect';
 
 const DanhSachNV = () => {
   const [nhanViens, setNhanViens] = useState([]);
@@ -18,6 +24,40 @@ const DanhSachNV = () => {
   const [resetOpen, setResetOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [newPassword, setNewPassword] = useState('');
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const roleOptions = [
+      { value: '', label: 'Tất cả vai trò' },
+      { value: 'CST', label: 'Chủ siêu thị' },
+      { value: 'QLC', label: 'Quản lý ca' },
+      { value: 'NV', label: 'Nhân viên' }
+  ];
+
+  const statusOptions = [
+      { value: '', label: 'Tất cả trạng thái' },
+      { value: 'hoat_dong', label: 'Đang hoạt động' },
+      { value: 'vo_hieu_hoa', label: 'Đã vô hiệu hóa' },
+      { value: 'bi_khoa', label: 'Bị khóa' }
+  ];
+
+  const filteredNhanViens = nhanViens.filter(nv => {
+      const term = searchTerm.trim().toLowerCase();
+      const matchSearch = term === '' || 
+          (nv.ho_ten && nv.ho_ten.toLowerCase().includes(term)) || 
+          (nv.ten_dang_nhap && nv.ten_dang_nhap.toLowerCase().includes(term));
+      if (!matchSearch) return false;
+
+      if (roleFilter && nv.ten_vai_tro !== roleFilter) return false;
+
+      if (statusFilter === 'hoat_dong' && (!nv.trang_thai || nv.bi_khoa)) return false;
+      if (statusFilter === 'vo_hieu_hoa' && nv.trang_thai) return false;
+      if (statusFilter === 'bi_khoa' && !nv.bi_khoa) return false;
+
+      return true;
+  });
 
   const fetchNhanViens = async () => {
     // ... (fetchNhanViens giữ nguyên)
@@ -177,28 +217,66 @@ const DanhSachNV = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Quản lý nhân viên</h1>
-            <p className="mt-1 text-sm text-gray-500">Danh sách nhân sự, phân vai trò và trạng thái tài khoản.</p>
-        </div>
-        <button 
-            onClick={handleAdd}
-            className="inline-flex items-center justify-center bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors shadow-sm font-medium"
-        >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Thêm nhân viên
-        </button>
+      <PageHeader 
+          title="Quản lý nhân viên"
+          description="Danh sách nhân sự, phân vai trò và trạng thái tài khoản."
+          action={
+              <button 
+                  onClick={handleAdd}
+                  className="inline-flex items-center justify-center bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors shadow-sm font-medium"
+              >
+                  <PlusIcon className="w-5 h-5 mr-2" />
+                  Thêm nhân viên
+              </button>
+          }
+      />
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <SearchInput 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+              placeholder="Tìm theo họ tên, tên đăng nhập..." 
+          />
+          <div className="flex flex-1 gap-4 sm:justify-end">
+              <FilterSelect 
+                  value={roleFilter} 
+                  onChange={e => setRoleFilter(e.target.value)} 
+                  options={roleOptions} 
+              />
+              <FilterSelect 
+                  value={statusFilter} 
+                  onChange={e => setStatusFilter(e.target.value)} 
+                  options={statusOptions} 
+              />
+          </div>
       </div>
 
       {loading ? (
-        <div className="animate-pulse space-y-4">
-            <div className="h-10 bg-gray-200 rounded w-full"></div>
-            <div className="h-24 bg-gray-200 rounded w-full"></div>
-            <div className="h-24 bg-gray-200 rounded w-full"></div>
-        </div>
+        <SkeletonTable columns={6} rows={5} />
+      ) : nhanViens.length === 0 ? (
+        <EmptyState 
+            icon={UserGroupIcon}
+            title="Chưa có nhân viên nào"
+            description="Hãy bắt đầu bằng cách thêm nhân viên mới vào hệ thống."
+            action={
+                <button 
+                    onClick={handleAdd}
+                    className="mt-2 inline-flex items-center justify-center bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors shadow-sm font-medium text-sm"
+                >
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Thêm ngay
+                </button>
+            }
+        />
+      ) : filteredNhanViens.length === 0 ? (
+        <EmptyState 
+            icon={MagnifyingGlassIcon}
+            title="Không tìm thấy kết quả"
+            description="Thử thay đổi từ khóa hoặc bộ lọc để xem kết quả."
+        />
       ) : (
-        <Table columns={columns} data={nhanViens} />
+        <Table columns={columns} data={filteredNhanViens} />
       )}
 
       <FormNV 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Bars3Icon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, ArrowRightOnRectangleIcon, BellIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,6 +27,14 @@ const Header = ({ setMobileOpen }) => {
         </div>
 
         <div className="flex items-center gap-4 ml-auto">
+            <button 
+                onClick={() => navigate('/thong-bao')}
+                className="relative p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                title="Thông báo"
+            >
+                <BellIcon className="w-6 h-6" />
+            </button>
+
             <button 
                 onClick={() => navigate('/ho-so')}
                 className="flex items-center gap-3 hover:bg-gray-50 p-1 px-2 rounded-xl transition-colors text-left group"

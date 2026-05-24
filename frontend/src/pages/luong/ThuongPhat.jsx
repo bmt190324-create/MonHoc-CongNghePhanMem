@@ -3,14 +3,40 @@ import axiosClient from '../../api/axiosClient';
 import Table from '../../components/common/Table';
 import Modal from '../../components/common/Modal';
 import toast from 'react-hot-toast';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, BanknotesIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import PageHeader from '../../components/common/PageHeader';
+import SkeletonTable from '../../components/common/SkeletonTable';
+import EmptyState from '../../components/common/EmptyState';
 import { format } from 'date-fns';
+import SearchInput from '../../components/common/SearchInput';
+import FilterSelect from '../../components/common/FilterSelect';
 
 const ThuongPhat = () => {
     const [thuongPhatList, setThuongPhatList] = useState([]);
     const [nhanViens, setNhanViens] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    const [searchTerm, setSearchTerm] = useState('');
+    const [typeFilter, setTypeFilter] = useState('');
+
+    const typeOptions = [
+        { value: '', label: 'Tất cả loại' },
+        { value: 'thuong', label: 'Thưởng' },
+        { value: 'phat', label: 'Phạt' }
+    ];
+
+    const filteredThuongPhatList = thuongPhatList.filter(row => {
+        const term = searchTerm.trim().toLowerCase();
+        const matchSearch = term === '' || 
+            (row.ho_ten && row.ho_ten.toLowerCase().includes(term)) ||
+            (row.ly_do && row.ly_do.toLowerCase().includes(term));
+        if (!matchSearch) return false;
+
+        if (typeFilter && row.loai !== typeFilter) return false;
+
+        return true;
+    });
     
     const [formData, setFormData] = useState({
         nhan_vien_id: '',
@@ -105,27 +131,55 @@ const ThuongPhat = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Thưởng / Phạt</h1>
-                    <p className="mt-1 text-sm text-gray-500">Quản lý các khoản thưởng và khấu trừ ngoài giờ.</p>
+            <PageHeader 
+                title="Thưởng / Phạt"
+                description="Quản lý các khoản thưởng và khấu trừ ngoài giờ."
+                action={
+                    <button 
+                        onClick={() => {
+                            setFormData({nhan_vien_id: '', loai: 'thuong', so_tien: '', ly_do: '', ngay: format(new Date(), 'yyyy-MM-dd')});
+                            setIsModalOpen(true);
+                        }}
+                        className="inline-flex items-center justify-center bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors shadow-sm font-medium"
+                    >
+                        <PlusIcon className="w-5 h-5 mr-2" />
+                        Thêm bản ghi
+                    </button>
+                }
+            />
+
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <SearchInput 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)} 
+                    placeholder="Tìm tên nhân viên hoặc lý do..." 
+                />
+                <div className="flex flex-1 gap-4 sm:justify-end">
+                    <FilterSelect 
+                        value={typeFilter} 
+                        onChange={e => setTypeFilter(e.target.value)} 
+                        options={typeOptions} 
+                    />
                 </div>
-                <button 
-                    onClick={() => {
-                        setFormData({nhan_vien_id: '', loai: 'thuong', so_tien: '', ly_do: '', ngay: format(new Date(), 'yyyy-MM-dd')});
-                        setIsModalOpen(true);
-                    }}
-                    className="inline-flex items-center justify-center bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors shadow-sm font-medium"
-                >
-                    <PlusIcon className="w-5 h-5 mr-2" />
-                    Thêm bản ghi
-                </button>
             </div>
 
             {loading ? (
-                <div className="animate-pulse h-48 bg-gray-200 rounded-lg"></div>
+                <SkeletonTable columns={6} rows={4} />
+            ) : thuongPhatList.length === 0 ? (
+                <EmptyState 
+                    icon={BanknotesIcon}
+                    title="Chưa có bản ghi nào"
+                    description="Hiện tại chưa có dữ liệu thưởng phạt nào được ghi nhận."
+                />
+            ) : filteredThuongPhatList.length === 0 ? (
+                <EmptyState 
+                    icon={MagnifyingGlassIcon}
+                    title="Không tìm thấy kết quả"
+                    description="Thử thay đổi từ khóa hoặc bộ lọc để xem kết quả."
+                />
             ) : (
-                <Table columns={columns} data={thuongPhatList} />
+                <Table columns={columns} data={filteredThuongPhatList} />
             )}
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Thêm Thưởng / Phạt">

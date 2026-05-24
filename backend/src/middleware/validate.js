@@ -1,22 +1,28 @@
-const validate = (schema) => (req, res, next) => {
-  const result = schema.safeParse({
-    body: req.body,
-    query: req.query,
-    params: req.params,
-  });
+/**
+ * Middleware để kiểm tra các trường dữ liệu bắt buộc (required fields).
+ * Chặn lỗi ở tầng route thay vì để controller bị crash.
+ *
+ * @param {string[]} requiredFields - Danh sách tên các trường bắt buộc trong req.body
+ */
+const validateRequired = (requiredFields) => {
+  return (req, res, next) => {
+    const missingFields = [];
 
-  if (!result.success) {
-    return res.status(400).json({
-      message: 'Dữ liệu đầu vào không hợp lệ',
-      errors: result.error.flatten(),
-    });
-  }
+    for (const field of requiredFields) {
+      if (req.body[field] === undefined || req.body[field] === null || req.body[field] === '') {
+        missingFields.push(field);
+      }
+    }
 
-  req.body = result.data.body || req.body;
-  req.query = result.data.query || req.query;
-  req.params = result.data.params || req.params;
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Thiếu dữ liệu bắt buộc: ${missingFields.join(', ')}`
+      });
+    }
 
-  next();
+    next();
+  };
 };
 
-module.exports = validate;
+module.exports = { validateRequired };

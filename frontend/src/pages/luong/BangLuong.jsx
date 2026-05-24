@@ -3,6 +3,14 @@ import axiosClient from '../../api/axiosClient';
 import Table from '../../components/common/Table';
 import Badge from '../../components/common/Badge';
 import toast from 'react-hot-toast';
+import PageHeader from '../../components/common/PageHeader';
+import SkeletonTable from '../../components/common/SkeletonTable';
+import EmptyState from '../../components/common/EmptyState';
+import { DocumentTextIcon, MagnifyingGlassIcon, EyeIcon } from '@heroicons/react/24/outline';
+import SearchInput from '../../components/common/SearchInput';
+import FilterSelect from '../../components/common/FilterSelect';
+import Modal from '../../components/common/Modal';
+import Payslip from '../../components/payroll/Payslip';
 
 const BangLuong = () => {
     const [thang, setThang] = useState(new Date().getMonth() + 1);
@@ -10,6 +18,27 @@ const BangLuong = () => {
     const [bangLuongList, setBangLuongList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [selectedBangLuong, setSelectedBangLuong] = useState(null);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+
+    const statusOptions = [
+        { value: '', label: 'Tất cả trạng thái' },
+        { value: 'nhap', label: 'Nháp' },
+        { value: 'da_duyet', label: 'Đã duyệt' },
+        { value: 'da_tra', label: 'Đã thanh toán' }
+    ];
+
+    const filteredBangLuongList = bangLuongList.filter(row => {
+        const term = searchTerm.trim().toLowerCase();
+        const matchSearch = term === '' || (row.ho_ten && row.ho_ten.toLowerCase().includes(term));
+        if (!matchSearch) return false;
+
+        if (statusFilter && row.trang_thai !== statusFilter) return false;
+
+        return true;
+    });
 
     const fetchBangLuong = async () => {
         setLoading(true);
@@ -84,7 +113,14 @@ const BangLuong = () => {
         {
             header: 'Hành động',
             render: (row) => (
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    <button
+                        onClick={() => setSelectedBangLuong(row)}
+                        className="p-1.5 text-gray-500 hover:text-primary-600 bg-gray-50 hover:bg-primary-50 rounded transition-colors"
+                        title="Chi tiết phiếu lương"
+                    >
+                        <EyeIcon className="w-5 h-5" />
+                    </button>
                     {/* Chuyển từ Nháp/Chờ duyệt sang Đã duyệt */}
                     {(row.trang_thai === 'nhap' || row.trang_thai === 'cho_duyet') && (
                         <button 
@@ -129,33 +165,33 @@ const BangLuong = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Bảng Lương</h1>
-                    <p className="mt-1 text-sm text-gray-500">Tính toán và quản lý lương định kỳ cho nhân viên.</p>
-                </div>
-                <div className="flex gap-2">
-                     <select 
-                        value={thang} 
-                        onChange={e => setThang(e.target.value)}
-                        className="border-gray-300 rounded-md shadow-sm border px-3 py-2"
-                    >
-                        {Array.from({ length: 12 }).map((_, i) => (
-                            <option key={i+1} value={i+1}>Tháng {i+1}</option>
-                        ))}
-                    </select>
-                     <select 
-                        value={nam} 
-                        onChange={e => setNam(e.target.value)}
-                        className="border-gray-300 rounded-md shadow-sm border px-3 py-2"
-                    >
-                        <option value={2026}>2026</option>
-                        <option value={2027}>2027</option>
-                    </select>
-                </div>
-            </div>
+            <PageHeader 
+                title="Bảng Lương"
+                description="Tính toán và quản lý lương định kỳ cho nhân viên."
+                action={
+                    <div className="flex gap-2">
+                         <select 
+                            value={thang} 
+                            onChange={e => setThang(e.target.value)}
+                            className="border-gray-300 rounded-md shadow-sm border px-3 py-2"
+                        >
+                            {Array.from({ length: 12 }).map((_, i) => (
+                                <option key={i+1} value={i+1}>Tháng {i+1}</option>
+                            ))}
+                        </select>
+                         <select 
+                            value={nam} 
+                            onChange={e => setNam(e.target.value)}
+                            className="border-gray-300 rounded-md shadow-sm border px-3 py-2"
+                        >
+                            <option value={2026}>2026</option>
+                            <option value={2027}>2027</option>
+                        </select>
+                    </div>
+                }
+            />
 
-            <div className="bg-blue-50 p-4 border border-blue-100 rounded-lg flex justify-between items-center">
+            <div className="bg-blue-50 p-4 border border-blue-100 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div className="text-sm text-blue-800">
                     <p><strong>Lưu ý:</strong> Nút "Tính Lương" sẽ tính toán lại toàn bộ dữ liệu chấm công và thưởng phạt trong tháng. Ca làm việc trễ giờ sẽ tự động bị phạt theo quy định.</p>
                 </div>
@@ -168,15 +204,58 @@ const BangLuong = () => {
                 </button>
             </div>
 
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <SearchInput 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)} 
+                    placeholder="Tìm tên nhân viên..." 
+                />
+                <div className="flex flex-1 gap-4 sm:justify-end">
+                    <FilterSelect 
+                        value={statusFilter} 
+                        onChange={e => setStatusFilter(e.target.value)} 
+                        options={statusOptions} 
+                    />
+                </div>
+            </div>
+
             {loading ? (
-                <div className="animate-pulse h-48 bg-gray-200 rounded-lg"></div>
+                <SkeletonTable columns={7} rows={4} />
             ) : bangLuongList.length === 0 ? (
-                 <div className="text-center p-8 text-gray-500 bg-white rounded-lg border border-gray-100">
-                    Chưa có dữ liệu lương của Tháng {thang}/{nam}. Vui lòng bấm Tính Lương.
-                 </div>
+                 <EmptyState 
+                    icon={DocumentTextIcon}
+                    title="Chưa có dữ liệu lương"
+                    description={`Chưa có dữ liệu lương của Tháng ${thang}/${nam}. Vui lòng bấm Bắt đầu Tính Lương.`}
+                 />
+            ) : filteredBangLuongList.length === 0 ? (
+                 <EmptyState 
+                    icon={MagnifyingGlassIcon}
+                    title="Không tìm thấy bảng lương"
+                    description="Thử thay đổi từ khóa hoặc bộ lọc trạng thái để xem kết quả."
+                 />
             ) : (
-                <Table columns={columns} data={bangLuongList} />
+                <Table columns={columns} data={filteredBangLuongList} />
             )}
+
+            <Modal 
+                isOpen={!!selectedBangLuong} 
+                onClose={() => setSelectedBangLuong(null)} 
+                title="Chi tiết Phiếu Lương"
+                maxWidth="max-w-3xl"
+            >
+                <div className="-mx-6 -mt-2">
+                    <Payslip bangLuong={selectedBangLuong} />
+                </div>
+                <div className="mt-6 flex justify-end">
+                    <button 
+                        onClick={() => setSelectedBangLuong(null)}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                    >
+                        Đóng
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 };

@@ -5,7 +5,8 @@ import { useAuth } from '../../hooks/useAuth';
 
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
-import { CheckIcon, XMarkIcon, ArrowUturnLeftIcon, CalendarIcon, ClockIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, XMarkIcon, ArrowUturnLeftIcon, CalendarIcon, ClockIcon } from '@heroicons/react/24/outline';
+import WeeklySchedule from '../../components/schedule/WeeklySchedule';
 
 const DAYS = [
     { value: 2, label: 'Thứ 2' },
@@ -157,23 +158,6 @@ const DuyetDangKy = () => {
         }
     };
 
-    // Grouping registrations by {khung_ca_id}-{thu_trong_tuan}
-    const groupedData = useMemo(() => {
-        const group = {};
-        danhSach.forEach(item => {
-            const key = `${item.khung_ca_id}-${item.thu_trong_tuan}`;
-            if (!group[key]) group[key] = [];
-            group[key].push(item);
-        });
-        return group;
-    }, [danhSach]);
-
-    const getStatusStyle = (trang_thai) => {
-        if (trang_thai === 'da_duyet') return 'bg-green-50 border-green-200 text-green-800';
-        if (trang_thai === 'tu_choi') return 'bg-red-50 border-red-200 text-red-800 opacity-60';
-        return 'bg-yellow-50 border-yellow-200 text-yellow-800'; // cho_duyet
-    };
-
     return (
         <div className="space-y-6 flex flex-col h-[calc(100vh-6rem)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
@@ -242,151 +226,15 @@ const DuyetDangKy = () => {
                 </div>
             )}
 
-            <div className="flex-1 overflow-auto bg-white rounded-xl shadow-sm border border-gray-200 relative">
-                {loading ? (
-                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center backdrop-blur-sm z-10">
-                        <div className="animate-pulse flex flex-col items-center">
-                            <div className="h-10 w-10 bg-primary-200 rounded-full mb-3"></div>
-                            <span className="text-gray-500 font-medium">Đang tải ma trận...</span>
-                        </div>
-                    </div>
-                ) : null}
-
-                <div className="min-w-[1000px]">
-                    <div className="grid grid-cols-8 border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
-                        <div className="p-4 font-semibold text-gray-600 border-r border-gray-200 text-center">Ca \ Thứ</div>
-                        {DAYS.map(day => (
-                            <div key={day.value} className="p-4 text-center font-semibold text-gray-700 border-r border-gray-200 last:border-0">
-                                {day.label}
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="divide-y divide-gray-200">
-                        {khungCaList.map((kc, index) => (
-                            <div key={kc.id} className={`grid grid-cols-8 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                                <div className="p-3 border-r border-gray-200 flex flex-col justify-center items-center bg-white sticky left-0 z-10 shadow-[1px_0_4px_rgba(0,0,0,0.05)]">
-                                    <span className="font-bold text-gray-800 bg-indigo-50 px-2.5 py-1 rounded-lg text-sm mb-1">{kc.ten_ca}</span>
-                                    <span className="text-[10px] text-gray-400 font-medium mb-2">{kc.gio_bat_dau.slice(0,5)} - {kc.gio_ket_thuc.slice(0,5)}</span>
-                                    
-                                    <div className="flex flex-col gap-1 w-full px-1">
-                                        {/* Min NV Control */}
-                                        <div className="flex items-center justify-between text-[9px] px-1.5 py-1 rounded bg-gray-50 border border-gray-100">
-                                            <span className="text-gray-400">Min:</span>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="font-bold text-indigo-600 min-w-[12px] text-center">{kc.min_nv || 2}</span>
-                                                {(user?.vaiTro === 'CST' || user?.vaiTro === 'QLC') && !isLocked && (
-                                                    <div className="flex flex-col -gap-0.5">
-                                                        <button 
-                                                            onClick={() => handleUpdateKhungCa(kc.id, (kc.min_nv || 2) + 1, kc.max_nv)}
-                                                            className="hover:text-indigo-600 transition-colors"
-                                                        >
-                                                            <ChevronUpIcon className="w-2.5 h-2.5" />
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => handleUpdateKhungCa(kc.id, Math.max(0, (kc.min_nv || 2) - 1), kc.max_nv)}
-                                                            className="hover:text-indigo-600 transition-colors"
-                                                        >
-                                                            <ChevronDownIcon className="w-2.5 h-2.5" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Max NV Control */}
-                                        <div className="flex items-center justify-between text-[9px] px-1.5 py-1 rounded bg-gray-50 border border-gray-100">
-                                            <span className="text-gray-400">Max:</span>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="font-bold text-red-600 min-w-[12px] text-center">{kc.max_nv || 4}</span>
-                                                {(user?.vaiTro === 'CST' || user?.vaiTro === 'QLC') && !isLocked && (
-                                                    <div className="flex flex-col -gap-0.5">
-                                                        <button 
-                                                            onClick={() => handleUpdateKhungCa(kc.id, kc.min_nv, (kc.max_nv || 4) + 1)}
-                                                            className="hover:text-red-600 transition-colors"
-                                                        >
-                                                            <ChevronUpIcon className="w-2.5 h-2.5" />
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => handleUpdateKhungCa(kc.id, kc.min_nv, Math.max(kc.min_nv || 0, (kc.max_nv || 4) - 1))}
-                                                            className="hover:text-red-600 transition-colors"
-                                                        >
-                                                            <ChevronDownIcon className="w-2.5 h-2.5" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {DAYS.map(day => {
-                                    const cellKey = `${kc.id}-${day.value}`;
-                                    const cellData = groupedData[cellKey] || [];
-                                    const isWeekend = day.value === 7 || day.value === 8;
-                                    
-                                    return (
-                                        <div key={day.value} className={`p-2 border-r border-gray-200 last:border-0 min-h-[120px] ${isWeekend ? 'bg-gray-50/30' : ''}`}>
-                                            <div className="flex justify-between items-center mb-2 px-1">
-                                                 <span className="text-[10px] text-gray-400 font-medium uppercase">
-                                                     {cellData.length}/4 người
-                                                 </span>
-                                            </div>
-                                            
-                                            <div className="space-y-2">
-                                                {cellData.map(reg => (
-                                                    <div key={reg.id} className={`p-2 border rounded-md text-sm ${getStatusStyle(reg.trang_thai)} flex flex-col transition-all cursor-default`}>
-                                                        <div className="flex justify-between items-start mb-1 h-full">
-                                                            <Link 
-                                                                to={`/ho-so/${reg.nhan_vien_id}`}
-                                                                className="font-semibold truncate pr-1 hover:underline hover:text-primary-700 transition" 
-                                                                title={`Xem hồ sơ của ${reg.ho_ten}`}
-                                                            >
-                                                                {reg.ho_ten}
-                                                            </Link>
-                                                            <span className="text-[10px] mt-0.5 px-1 rounded bg-black/5 shrink-0">
-                                                                {reg.trang_thai === 'cho_duyet' ? 'Chờ' : reg.trang_thai === 'da_duyet' ? 'Đã duyệt' : 'Từ chối'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex gap-1 justify-end mt-1 pt-1 border-t border-black/5 opacity-80 hover:opacity-100">
-                                                        {reg.trang_thai === 'cho_duyet' && (selectedTuanInfo?.trang_thai !== 'hoan_thanh') && !isLocked && (
-                                                                <>
-                                                                    <button 
-                                                                        onClick={() => handleDuyet(reg.id, 'da_duyet')}
-                                                                        className="p-1 px-2 border border-green-300 rounded bg-white text-green-700 hover:bg-green-500 hover:text-white transition-colors"
-                                                                        title="Duyệt"
-                                                                    ><CheckIcon className="w-3.5 h-3.5" /></button>
-                                                                    <button 
-                                                                        onClick={() => handleDuyet(reg.id, 'tu_choi')}
-                                                                        className="p-1 px-2 border border-red-300 rounded bg-white text-red-700 hover:bg-red-500 hover:text-white transition-colors"
-                                                                        title="Từ chối"
-                                                                    ><XMarkIcon className="w-3.5 h-3.5" /></button>
-                                                                </>
-                                                            )}
-                                                            {reg.trang_thai !== 'cho_duyet' && (selectedTuanInfo?.trang_thai !== 'hoan_thanh') && !isLocked && (
-                                                                <button 
-                                                                    onClick={() => handleDuyet(reg.id, 'cho_duyet')}
-                                                                    className="p-1 px-2 border border-yellow-400 rounded bg-white text-yellow-700 hover:bg-yellow-500 hover:text-white transition-colors flex items-center gap-1 w-full justify-center text-xs"
-                                                                    title="Bỏ duyệt"
-                                                                ><ArrowUturnLeftIcon className="w-3.5 h-3.5" /> Bỏ duyệt</button>
-                                                            )}
-                                                            {isLocked && reg.trang_thai !== 'cho_duyet' && (
-                                                                <div className="text-[10px] text-center w-full text-gray-400 italic py-1 border border-gray-100 rounded bg-gray-50/50">Đã chốt lịch</div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                {cellData.length === 0 && (
-                                                    <div className="text-xs text-gray-300 italic text-center pt-4">Trống</div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
+                <WeeklySchedule 
+                    khungCaList={khungCaList} 
+                    danhSach={danhSach} 
+                    isLocked={isLocked}
+                    handleUpdateKhungCa={handleUpdateKhungCa}
+                    handleDuyet={handleDuyet}
+                    selectedTuanInfo={selectedTuanInfo}
+                    loading={loading}
+                />
             
         </div>
     );
